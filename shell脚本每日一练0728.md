@@ -1,0 +1,199 @@
+#### 0728
+
+##### 需求：
+
+创建10个随机用户，并且设置随机密码，密码记录到一个文件中，文件名：userinfo.txt
+
+用户从user_00到user_09
+
+密码要求：包含大小写字母及数字，密码长度15位
+
+##### 脚本
+
+```bash
+#!/bin/bash
+
+##先查看/tmp/userinfo.txt文件是否存在,存在就删除，测试脚本
+if [ -f /tmp/userinfo.txt ]
+then
+        echo "/tmp/userinfo.txt is exits,delete...."
+        rm -rf /tmp/userinfo.txt
+else
+        echo "/tmp/userinfo.txt is not exits"
+fi
+
+##判断mkpasswd命令是否存在，用这个命令生成随机字符串，也就是密码
+if [ ! which mkpasswd ]
+then
+	echo "no mkpasswd,install..."
+	yum -y install expect
+else
+	echo "mkpasswd is exits"
+fi
+
+##借助seq生成从00到09，10个数的队列
+for i in `seq -w 0 09`
+do
+	##每次生成一个随机字符串，将该字符串赋值给变量P，这个就是用户的密码
+	##mkpasswd命令默认生成的字符串会包含大小写字母和数字和特殊符合
+	##如果不需要特殊符合，可以加-s 0来限定不使用特殊符号
+	p=`mkpasswd -l 15 -s 0`
+	##添加用户并且给用户设置密码
+	useradd user_${i} && echo "${p}" | passwd --stdin user_${i}
+	echo "user_${i} ${p}" >> /tmp/userinfo.txt
+done
+
+```
+
+
+
+
+
+
+
+##### 总结关键：
+
+###### 1.if语句
+
+基本语法
+
+```bash
+if [ command ]
+then
+	符合该条件执行的语句
+fi
+```
+
+多层嵌套
+
+```bash
+if [ command ]
+then
+     符合该条件执行的语句
+elif [ command ]
+then
+     符合该条件执行的语句
+else
+     符合该条件执行的语句
+fi
+```
+
+常用的参数：
+
+文件类型判断
+
+```bash
+[ -a file ] 如果 file 存在则为真。
+[ -d file ] 如果 file 存在且是一个目录则返回为真。
+[ -e file ] 如果 指定的文件或目录存在时返回为真。
+[ -f file ] 如果 file 存在且是一个普通文件则返回为真。
+[ -r file ] 如果 file 存在且是可读的则返回为真。
+[ -w file ] 如果 file 存在且是可写的则返回为真。（一个目录为了它的内容被访问必然是可执行的）
+[ -x file ] 如果 file 存在且是可执行的则返回为真。
+```
+
+字符串判断
+
+```bash
+[ -z string ] 如果string的长度为零则返回为真，即空是真
+[ -n string ] 如果string的长度非零则返回为真，即非空是真
+[ string1 ]　 如果字符串不为空则返回为真,与-n类似
+[ string1 == string2 ] 如果两个字符串相同则返回为真
+[ string1 != string2 ] 如果字符串不相同则返回为真
+[ string1 < string2 ] 如果 “string1”字典排序在“string2”前面则返回为真。
+[ string1 > string2 ] 如果 “string1”字典排序在“string2”后面则返回为真。
+```
+
+数值判断
+
+```bash
+[ int1 -eq int2 ] int1和int2两数相等返回为真 ,=
+[ int1 -ne int2 ] int1和int2两数不等返回为真 ,<>
+[ int1 -gt int2 ] int1大于int2返回为真 ,>
+[ int1 -ge int2 ] int1大于等于int2返回为真,>=
+[ int1 -lt int2 ] int1小于int2返回为真 ,<
+[ int1 -le int2 ] int1小于等于int2返回为真,<=
+```
+
+逻辑判断
+
+```bash
+[ ! EXPR ] 逻辑非，如果 EXPR 是false则返回为真。
+[ EXPR1 -a EXPR2 ] 逻辑与，如果 EXPR1 and EXPR2 全真则返回为真。
+[ EXPR1 -o EXPR2 ] 逻辑或，如果 EXPR1 或者 EXPR2 为真则返回为真。
+常用:
+[ ] || [ ] 用OR来合并两个条件
+[ ] && [ ] 用AND来合并两个条件
+```
+
+检测执行脚本的用户
+
+```bash
+if [ "$(whoami)" != 'root' ]
+then
+   echo  "You  have no permission to run $0 as non-root user."
+   exit  1;
+fi
+```
+
+
+
+
+
+
+
+
+
+###### 2.seq命令
+
+seq用于**输出连续的数字，或者输出固定间隔的数字，或者输出指定格式的数字**
+
+```bash
+seq 1 5
+```
+
+![](https://raw.githubusercontent.com/Romantic-1/ImgBed/main/20250728144933259.png)
+
+**seq命令还可以实现比如从1开始，每次步进2，最大到10**
+
+```bash
+seq 1 2 10
+```
+
+![](https://raw.githubusercontent.com/Romantic-1/ImgBed/main/20250728145030419.png)
+
+**seq命令还有一些常用选项参数**
+
+```bash
+-s     指定输出的分隔符，默认为\n，即默认为回车换行
+-W     指定为定宽输出，不能和-f-起用
+-f     按照指定的格式输出，不能和-w一起使用
+```
+
+**-s选项:指定分隔符，下图为指定加号为分隔符,输出的数字将会使用" + "连接，默认情况下回车换行(\n)为分隔符。**
+
+seq -s + 1 10
+
+![](https://raw.githubusercontent.com/Romantic-1/ImgBed/main/20250728145210333.png)
+
+**-f选项：按照指定格式输出生成的数字，在没有使用-f选项指定格式时，默认格式为%g，可以理解为使用-f指定模式为“%g”，跟不指定格式没有任何区别。**
+
+![](https://raw.githubusercontent.com/Romantic-1/ImgBed/main/20250728160035488.png)
+
+**我们经常还会使用如下常用格式，“%3g"这种格式表示指定" 位宽"为三位，那么数字位数不足部分用空格补位**
+
+![](https://raw.githubusercontent.com/Romantic-1/ImgBed/main/20250728160134901.png)
+
+**"%02g"表示指定位宽为两位,数字位数不足用0补位，这种写法跟上述提到的-w选项类似，只不过-w是以指定的最大值的位数为最大位数，而-f选项可以直接指定位数,在下例中,我们也对比了-w选项与-选项的区别。**
+
+![](https://raw.githubusercontent.com/Romantic-1/ImgBed/main/20250728160212963.png)
+
+**上述例子中的格式中，都包含一个‘%’，其实%前面还可以指定字符串。**
+
+**例如在屏幕上打印5个名为dir1,dir2......dir5的字符串，这时候就用到这种写法。**
+
+![](https://raw.githubusercontent.com/Romantic-1/ImgBed/main/20250728160239298.png)
+
+**所以，结合上述示例中的seq命令的特性，在结合其他命令，就能为我们带来许多方便。例如一次性创建５个名为dir001-dir005的目录，这时候就用的这种写法。**
+
+![](https://raw.githubusercontent.com/Romantic-1/ImgBed/main/20250728160346509.png)
